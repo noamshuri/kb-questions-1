@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כ"ב שאלות - מערכת ניהול ראשית</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Heebo & Frank Ruhl Libre -->
+    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Heebo', 'sans-serif'],
+                        serif: ['Frank Ruhl Libre', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #fcfbf9;
+            color: #111827;
+            min-height: 100vh;
+        }
+        .editorial-title {
+            font-family: 'Frank Ruhl Libre', serif;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-anim {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-[#fcfbf9] text-slate-900 min-h-screen flex flex-col justify-between selection:bg-amber-200 selection:text-slate-900">
+
+    <!-- Global Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-xl editorial-title shadow-sm">
+                    כ"ב
+                </div>
+                <div>
+                    <h1 class="text-xl font-black editorial-title tracking-wide text-slate-900">כ"ב שאלות — מערכת ניהול</h1>
+                    <p class="text-xs text-slate-500">ניהול גיליונות, שאלות, מעקב משתתפים וסטטיסטיקות מתקדמות</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="exportData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center gap-1.5 border border-slate-200">
+                    <i class="fa-solid fa-download text-amber-600"></i> ייצוא נתונים (JSON)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-8 space-y-6">
+        
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 border-b border-slate-200 pb-4 overflow-x-auto">
+            <button onclick="switchAdminTab('overview')" id="btn-tab-overview" class="px-5 py-2.5 rounded-xl text-sm font-bold transition bg-slate-900 text-white shadow-sm flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie"></i> סקירה כללית
+            </button>
+            <button onclick="switchAdminTab('quizzes')" id="btn-tab-quizzes" class="px-5 py-2.5 rounded-xl text-sm font-bold transition bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2">
+                <i class="fa-solid fa-book-open"></i> ניהול גיליונות ושאלונים
+            </button>
+            <button onclick="switchAdminTab('participants')" id="btn-tab-participants" class="px-5 py-2.5 rounded-xl text-sm font-bold transition bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2">
+                <i class="fa-solid fa-users"></i> משתתפים ונתונים
+            </button>
+            <button onclick="switchAdminTab('analytics')" id="btn-tab-analytics" class="px-5 py-2.5 rounded-xl text-sm font-bold transition bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2">
+                <i class="fa-solid fa-chart-column"></i> סטטיסטיקות וגרפים
+            </button>
+        </div>
+
+        <!-- Dynamic Tab Content Area -->
+        <div id="admin-content-area" class="space-y-6">
+            <!-- Injected via JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        <p>כ"ב שאלות &copy; 2026 - מערכת ניהול מקצועית בסגנון עיתונאי</p>
+    </footer>
+
+    <!-- Modal for notifications -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-950/30 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 modal-anim shadow-2xl text-center">
+            <div id="modal-icon" class="w-14 h-14 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 border border-amber-200">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <h3 id="modal-title" class="text-lg font-bold mb-2 text-slate-900">כותרת</h3>
+            <p id="modal-message" class="text-slate-600 text-sm mb-6 leading-relaxed">הודעה...</p>
+            <button onclick="closeModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition">אישור</button>
+        </div>
+    </div>
+
+    <!-- Management Application Script -->
+    <script>
+        const STORAGE_KEYS = {
+            QUIZZES: 'kb_quizzes_v4',
+            SUBMISSIONS: 'kb_submissions_v4'
+        };
+
+        function getInitialQuizzes() {
+            const defaultQuestions = [];
+            for (let i = 1; i <= 21; i++) {
+                defaultQuestions.push({
+                    id: i,
+                    question: `שאלה רגילה מספר ${i} בגיליון הטריוויה המרכזי. מהי התשובה?`,
+                    answer: `התשובה הנכונה לשאלה ${i}`,
+                    explanation: `הסבר קצר אודות ההקשר והתשובה לשאלה מספר ${i}.`
+                });
+            }
+            defaultQuestions.push({
+                id: 22,
+                question: "שאלה קשה במיוחד (בונוס עם כוכב): באיזו שנה ובאילו נסיבות התרחש האירוע ההיסטורי הסודי?",
+                answer: "התשובה המלאה והמדויקת לשאלה הקשה ביותר.",
+                explanation: "זוהי שאלת הקצה המאתגרת המיועדת למצטיינים ביותר."
+            });
+
+            return [
+                {
+                    id: 1,
+                    sheetNumber: 1,
+                    title: "גיליון פתיחה חגיגי",
+                    description: "הגיליון הראשון בסדרת כ\"ב שאלות.",
+                    questions: defaultQuestions,
+                    settings: { primaryColor: '#b45309', bgImageUrl: '', fontStyle: 'Heebo' }
+                }
+            ];
+        }
+
+        function getQuizzes() {
+            const data = localStorage.getItem(STORAGE_KEYS.QUIZZES);
+            if (!data) {
+                const initial = getInitialQuizzes();
+                localStorage.setItem(STORAGE_KEYS.QUIZZES, JSON.stringify(initial));
+                return initial;
+            }
+            return JSON.parse(data);
+        }
+
+        function saveQuizzes(quizzes) {
+            localStorage.setItem(STORAGE_KEYS.QUIZZES, JSON.stringify(quizzes));
+        }
+
+        function getSubmissions() {
+            const data = localStorage.getItem(STORAGE_KEYS.SUBMISSIONS);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveSubmissions(subs) {
+            localStorage.setItem(STORAGE_KEYS.SUBMISSIONS, JSON.stringify(subs));
+        }
+
+        let currentTab = 'overview';
+
+        function switchAdminTab(tab) {
+            currentTab = tab;
+            ['overview', 'quizzes', 'participants', 'analytics'].forEach(t => {
+                const btn = document.getElementById(`btn-tab-${t}`);
+                if (btn) {
+                    btn.className = (t === tab)
+                        ? 'px-5 py-2.5 rounded-xl text-sm font-bold transition bg-slate-900 text-white shadow-sm flex items-center gap-2'
+                        : 'px-5 py-2.5 rounded-xl text-sm font-bold transition bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2';
+                }
+            });
+            renderTabContent();
+        }
+
+        function renderTabContent() {
+            const area = document.getElementById('admin-content-area');
+            area.innerHTML = '';
+            if (currentTab === 'overview') renderOverviewTab(area);
+            else if (currentTab === 'quizzes') renderQuizzesTab(area);
+            else if (currentTab === 'participants') renderParticipantsTab(area);
+            else if (currentTab === 'analytics') renderAnalyticsTab(area);
+        }
+
+        // --- 1. Overview Tab ---
+        function renderOverviewTab(container) {
+            const quizzes = getQuizzes();
+            const subs = getSubmissions();
+            const totalParticipants = subs.length;
+            const avgScore = totalParticipants > 0 ? (subs.reduce((acc, s) => acc + s.score, 0) / totalParticipants).toFixed(1) : 0;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                        <span class="text-xs text-slate-500 font-semibold block mb-1">סך הגיליונות הפעילים</span>
+                        <h3 class="text-3xl font-black text-slate-900">${quizzes.length}</h3>
+                        <p class="text-xs text-amber-700 mt-2 font-medium"><i class="fa-solid fa-book-open ml-1"></i> כל גיליון מכיל 22 שאלות</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                        <span class="text-xs text-slate-500 font-semibold block mb-1">סך כל המשתתפים</span>
+                        <h3 class="text-3xl font-black text-slate-900">${totalParticipants}</h3>
+                        <p class="text-xs text-emerald-700 mt-2 font-medium"><i class="fa-solid fa-users ml-1"></i> פעילים במערכת</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                        <span class="text-xs text-slate-500 font-semibold block mb-1">ציון ממוצע מערכתי</span>
+                        <h3 class="text-3xl font-black text-slate-900">${avgScore} <span class="text-lg text-slate-400">/ 22</span></h3>
+                        <p class="text-xs text-blue-700 mt-2 font-medium"><i class="fa-solid fa-chart-line ml-1"></i> מדד הצלחה כללי</p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+                    <h3 class="text-xl font-bold editorial-title text-slate-900 mb-2">ברוכים הבאים למערכת הניהול של "כ"ב שאלות"</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                        כאן תוכלו לנהל את כל גיליונות הטריוויה בסגנון "הארץ", להגדיר שאלות רגילות ואת השאלה הקשה במיוחד, לערוך עיצובים וצבעים, לצפות בנתוני כל משתמש ובסטטיסטיקות השוואתיות עם גרפים מדויקים.
+                    </p>
+                    <div class="flex gap-3 flex-wrap">
+                        <button onclick="switchAdminTab('quizzes')" class="px-5 py-3 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition shadow-md">
+                            <i class="fa-solid fa-plus ml-1.5"></i> צה גיליון חדש עכשיו
+                        </button>
+                        <button onclick="switchAdminTab('analytics')" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition border border-slate-200">
+                            <i class="fa-solid fa-chart-column ml-1.5"></i> צפה בסטטיסטיקות וגרפים
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 2. Quizzes Tab ---
+        function renderQuizzesTab(container) {
+            const quizzes = getQuizzes();
+            let html = `
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold editorial-title text-slate-900">ניהול גיליונות שאלונים</h3>
+                        <p class="text-xs text-slate-500">יצירת גיליונות חדשים בלחיצת כפתור ועריכת 22 השאלות והעיצוב.</p>
+                    </div>
+                    <button onclick="createNewQuizSheet()" class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> צור גיליון חדש בלחיצה
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+            `;
+
+            quizzes.forEach(quiz => {
+                html += `
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <span class="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-xs font-bold mb-2 inline-block">גיליון מספר #${quiz.sheetNumber || quiz.id}</span>
+                            <h4 class="text-xl font-bold text-slate-900">${quiz.title}</h4>
+                            <p class="text-xs text-slate-500 mt-1">${quiz.description || 'ללא תיאור'} | ${quiz.questions.length} שאלות (21 + 1 קשה)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openEditQuizModal(${quiz.id})" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition border border-slate-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-pen-to-square text-amber-600"></i> ערוך שאלות ועיצוב
+                            </button>
+                            <button onclick="deleteQuizSheet(${quiz.id})" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition border border-rose-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-trash"></i> מחק גיליון
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function createNewQuizSheet() {
+            const quizzes = getQuizzes();
+            const newId = quizzes.length > 0 ? Math.max(...quizzes.map(q => q.id)) + 1 : 1;
+            const newSheetNum = quizzes.length > 0 ? Math.max(...quizzes.map(q => q.sheetNumber || q.id)) + 1 : 1;
+
+            const defaultQuestions = [];
+            for (let i = 1; i <= 21; i++) {
+                defaultQuestions.push({
+                    id: i,
+                    question: `שאלה רגילה מספר ${i} בגיליון החדש`,
+                    answer: `התשובה הנכונה לשאלה ${i}`,
+                    explanation: `הסבר קצר לשאלה ${i}`
+                });
+            }
+            defaultQuestions.push({
+                id: 22,
+                question: "שאלה קשה במיוחד (בונוס עם כוכב): באיזו שנה התרחש האירוע המרכזי?",
+                answer: "תשובת העומק לשאלה הקשה.",
+                explanation: "הסבר מקיף לשאלה הקשה בגיליון."
+            });
+
+            quizzes.push({
+                id: newId,
+                sheetNumber: newSheetNum,
+                title: `גיליון מס' ${newSheetNum}`,
+                description: "גיליון טריוויה חדש במערכת.",
+                questions: defaultQuestions,
+                settings: { primaryColor: '#b45309', bgImageUrl: '', fontStyle: 'Heebo' }
+            });
+
+            saveQuizzes(quizzes);
+            renderQuizzesTab(document.getElementById('admin-content-area'));
+            showModal('הצלחה', `גיליון מס' ${newSheetNum} נוצר בהצלחה!`, 'success');
+        }
+
+        function deleteQuizSheet(quizId) {
+            if (!confirm("האם למחוק גיליון זה? שים לב: פעולה זו תמחק באופן אוטומטי (Cascading) גם את כל המשתתפים שלקחו בו חלק מהסטטיסטיקות!")) return;
+            let quizzes = getQuizzes();
+            quizzes = quizzes.filter(q => q.id !== quizId);
+            saveQuizzes(quizzes);
+
+            let subs = getSubmissions();
+            subs = subs.filter(s => s.quizId !== quizId);
+            saveSubmissions(subs);
+
+            renderQuizzesTab(document.getElementById('admin-content-area'));
+            showModal('נמחק', 'הגיליון וכל המשתמשים המשויכים אליו הוסרו בהצלחה.', 'success');
+        }
+
+        function openEditQuizModal(quizId) {
+            const quizzes = getQuizzes();
+            const quiz = quizzes.find(q => q.id === quizId);
+            if (!quiz) return;
+
+            let questionsHTML = quiz.questions.map((q, idx) => {
+                const isHard = (idx === quiz.questions.length - 1);
+                return `
+                    <div class="bg-white border ${isHard ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'} rounded-2xl p-4 space-y-3 shadow-sm">
+                        <span class="text-xs font-bold ${isHard ? 'text-amber-700' : 'text-slate-500'}">${isHard ? '★ שאלה קשה במיוחד (22)' : `שאלה מספר ${idx + 1}`}</span>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1">טקסט השאלה:</label>
+                            <input type="text" id="edit-q-text-${idx}" value="${q.question}" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">תשובה:</label>
+                                <input type="text" id="edit-q-ans-${idx}" value="${q.answer}" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-sm focus:outline-none focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">הסבר קצר:</label>
+                                <input type="text" id="edit-q-exp-${idx}" value="${q.explanation}" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-sm focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const modal = document.createElement('div');
+            modal.id = 'edit-quiz-modal';
+            modal.className = 'fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto';
+            modal.innerHTML = `
+                <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 md:p-8 modal-anim shadow-2xl my-8 max-h-[90vh] flex flex-col">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900">עריכת גיליון #${quiz.sheetNumber || quiz.id}</h3>
+                            <p class="text-xs text-slate-500">עריכת פרטי הגיליון, העיצוב ו-22 השאלות</p>
+                        </div>
+                        <button onclick="closeEditQuizModal()" class="text-slate-400 hover:text-slate-700 text-lg"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+
+                    <div class="space-y-4 overflow-y-auto flex-grow pr-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">מספר גיליון:</label>
+                                <input type="number" id="modal-sheet-num" value="${quiz.sheetNumber || quiz.id}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-sm focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">כותרת הגיליון:</label>
+                                <input type="text" id="modal-sheet-title" value="${quiz.title}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-sm focus:outline-none">
+                            </div>
+                        </div>
+
+                        <h4 class="text-md font-bold text-slate-800 mt-4 mb-2">22 שאלות הגיליון (21 רגילות + 1 קשה):</h4>
+                        <div class="space-y-3">
+                            ${questionsHTML}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-4">
+                        <button onclick="closeEditQuizModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition">ביטול</button>
+                        <button onclick="saveQuizEdits(${quiz.id})" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm shadow-lg transition">שמור שינויים</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function closeEditQuizModal() {
+            const modal = document.getElementById('edit-quiz-modal');
+            if (modal) modal.remove();
+        }
+
+        function saveQuizEdits(quizId) {
+            const quizzes = getQuizzes();
+            const idx = quizzes.findIndex(q => q.id === quizId);
+            if (idx === -1) return;
+
+            quizzes[idx].sheetNumber = parseInt(document.getElementById('modal-sheet-num').value) || quizzes[idx].id;
+            quizzes[idx].title = document.getElementById('modal-sheet-title').value.trim() || quizzes[idx].title;
+
+            for (let i = 0; i < quizzes[idx].questions.length; i++) {
+                quizzes[idx].questions[i].question = document.getElementById(`edit-q-text-${i}`).value;
+                quizzes[idx].questions[i].answer = document.getElementById(`edit-q-ans-${i}`).value;
+                quizzes[idx].questions[i].explanation = document.getElementById(`edit-q-exp-${i}`).value;
+            }
+
+            saveQuizzes(quizzes);
+            closeEditQuizModal();
+            renderQuizzesTab(document.getElementById('admin-content-area'));
+            showModal('נשמר', 'הגיליון עודכן בהצלחה!', 'success');
+        }
+
+        // --- 3. Participants Tab ---
+        function renderParticipantsTab(container) {
+            const subs = getSubmissions();
+            const quizzes = getQuizzes();
+
+            let rowsHTML = subs.map(s => {
+                const quiz = quizzes.find(q => q.id === s.quizId);
+                const quizTitle = quiz ? `גיליון #${quiz.sheetNumber || quiz.id}: ${quiz.title}` : 'גיליון נמחק';
+                const dateStr = new Date(s.date).toLocaleDateString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 transition text-sm">
+                        <td class="py-3 px-4 font-bold text-slate-900">${s.name}</td>
+                        <td class="py-3 px-4"><span class="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold">מחזור ${s.cohort}</span></td>
+                        <td class="py-3 px-4 text-slate-600 text-xs">${quizTitle}</td>
+                        <td class="py-3 px-4 font-black text-amber-700">${s.score} / ${s.total}</td>
+                        <td class="py-3 px-4 text-slate-500 text-xs">${dateStr}</td>
+                        <td class="py-3 px-4 text-left">
+                            <button onclick="deleteParticipant('${s.id}')" class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition">
+                                <i class="fa-solid fa-trash ml-1"></i> מחק משתתף
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold editorial-title text-slate-900">טבלת כלל המשתתפים</h3>
+                            <p class="text-xs text-slate-500">ניתן למחוק משתתף כך שלא יופיע עוד בסטטיסטיקות המערכת.</p>
+                        </div>
+                    </div>
+
+                    ${subs.length === 0 ? `
+                        <div class="text-center py-12 text-slate-400">
+                            <i class="fa-solid fa-users-slash text-4xl mb-3"></i>
+                        <p class="text-sm">אין עדיין משתתפים רשומים במערכת.</p>
+                        </div>
+                    ` : `
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                               <thead>
+                                    <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 bg-slate-50">
+                                        <th class="py-3 px-4">שם משתתף</th>
+                                        <th class="py-3 px-4">מחזור</th>
+                                        <th class="py-3 px-4">גיליון שאלון</th>
+                                        <th class="py-3 px-4">ציון</th>
+                                        <th class="py-3 px-4">תאריך הגשה</th>
+                                        <th class="py-3 px-4 text-left">פעולות</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rowsHTML}</tbody>
+                            </table>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function deleteParticipant(subId) {
+            if (!confirm("האם למחוק משתתף זה? הוא יוסר לצמיתות מכל הסטטיסטיקות והדוחות.")) return;
+            let subs = getSubmissions();
+            subs = subs.filter(s => s.id !== subId);
+            saveSubmissions(subs);
+            renderParticipantsTab(document.getElementById('admin-content-area'));
+            showModal('נמחק', 'המשתתף הוסר בהצלחה מהנתונים.', 'success');
+        }
+
+        // --- 4. Analytics & Statistics Tab ---
+        function renderAnalyticsTab(container) {
+            const subs = getSubmissions();
+            const quizzes = getQuizzes();
+            const totalCount = subs.length;
+            const avgScore = totalCount > 0 ? (subs.reduce((acc, s) => acc + s.score, 0) / totalCount).toFixed(1) : 0;
+
+            const cohorts = { "כ'": 0, "כ\"א": 0, "כ\"ב": 0 };
+            const cohortScores = { "כ'": [], "כ\"א": [], "כ\"ב": [] };
+            subs.forEach(s => {
+                if (cohorts[s.cohort] !== undefined) {
+                    cohorts[s.cohort]++;
+                    cohortScores[s.cohort].push(s.score);
+                }
+            });
+
+            let cohortCardsHTML = Object.keys(cohorts).map(c => {
+                const count = cohorts[c];
+                const scores = cohortScores[c];
+                const cAvg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0;
+                return `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 text-center shadow-sm">
+                        <span class="text-amber-700 font-bold text-sm block mb-1">מחזור ${c}</span>
+                        <span class="text-2xl font-black text-slate-900">${count}</span>
+                        <p class="text-xs text-slate-500 mt-1">משתתפים | ממוצע: ${cAvg}</p>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl font-bold border border-amber-200">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500">סך כל המשתתפים המשוקללים</span>
+                                <h4 class="text-2xl font-black text-slate-900">${totalCount}</h4>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl font-bold border border-emerald-200">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500">ציון ממוצע מערכתי כללי</span>
+                                <h4 class="text-2xl font-black text-slate-900">${avgScore} / 22</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold editorial-title text-slate-900">התפלגות ציוני המשתתפים (גרף השוואתי)</h3>
+                                <p class="text-xs text-slate-500">בחירה בין גרף עמודות לגרף עוגה</p>
+                            </div>
+                            <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                                <button onclick="setChartType('bar')" id="btn-chart-bar" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white transition shadow-sm">גרף עמודות</button>
+                                <button onclick="setChartType('pie')" id="btn-chart-pie" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">גרף עוגה</button>
+                            </div>
+                        </div>
+
+                        <div class="relative h-72 w-full">
+                            <canvas id="analyticsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-4">
+                        <h3 class="text-xl font-bold editorial-title text-slate-900">סטטיסטיקות לפי מחזורי לימוד</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${cohortCardsHTML}
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-4">
+                        <h3 class="text-xl font-bold editorial-title text-slate-900">סטטיסטיקות לפי גיליון שאלון</h3>
+                        <div class="space-y-3">
+                            ${quizzes.map(q => {
+                                const qSubs = subs.filter(s => s.quizId === q.id);
+                                const qAvg = qSubs.length > 0 ? (qSubs.reduce((acc, s) => acc + s.score, 0) / qSubs.length).toFixed(1) : 0;
+                                return `
+                                    <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-200 text-sm">
+                                        <div>
+                                            <span class="font-bold text-slate-900">גיליון #${q.sheetNumber || q.id}: ${q.title}</span>
+                                            <span class="text-xs text-slate-500 block">${qSubs.length} משתתפים שסיימו</span>
+                                        </div>
+                                        <div class="text-left">
+                                            <span class="text-amber-700 font-bold">ציון ממוצע: ${qAvg}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            renderAnalyticsChart('bar', subs);
+        }
+
+        let activeChart = null;
+        function setChartType(type) {
+            document.getElementById('btn-chart-bar').className = type === 'bar' ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white transition shadow-sm' : 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+            document.getElementById('btn-chart-pie').className = type === 'pie' ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white transition shadow-sm' : 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+            
+            const subs = getSubmissions();
+            renderAnalyticsChart(type, subs);
+        }
+
+        function renderAnalyticsChart(type, subs) {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            if (activeChart) activeChart.destroy();
+
+            const brackets = { '0-10': 0, '11-15': 0, '16-19': 0, '20-22': 0 };
+            subs.forEach(s => {
+                if (s.score <= 10) brackets['0-10']++;
+                else if (s.score <= 15) brackets['11-15']++;
+                else if (s.score <= 19) brackets['16-19']++;
+                else brackets['20-22']++;
+            });
+
+            activeChart = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: Object.keys(brackets),
+                    datasets: [{
+                        label: 'מספר משתתפים',
+                        data: Object.values(brackets),
+                        backgroundColor: ['rgba(239, 68, 68, 0.75)', 'rgba(245, 158, 11, 0.75)', 'rgba(59, 130, 246, 0.75)', 'rgba(16, 185, 129, 0.75)'],
+                        borderColor: ['rgb(239, 68, 68)', 'rgb(245, 158, 11)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)'],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: type === 'pie', labels: { color: '#334155' } } },
+                    scales: type === 'bar' ? {
+                        y: { beginAtZero: true, ticks: { color: '#64748b', stepSize: 1 }, grid: { color: 'rgba(226, 232, 240, 0.8)' } },
+                        x: { ticks: { color: '#64748b' }, grid: { display: false } }
+                    } : {}
+                }
+            });
+        }
+
+        function exportData() {
+            const data = {
+                quizzes: getQuizzes(),
+                submissions: getSubmissions()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'kb_questions_backup.json';
+            a.click();
+            showModal('ייצוא נתונים', 'קובץ הגיבוי הונפק בהצלחה.', 'success');
+        }
+
+        function showModal(title, message, type = 'info') {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            
+            const iconEl = document.getElementById('modal-icon');
+            if (type === 'error') {
+                iconEl.className = 'w-14 h-14 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center text-2xl mx-auto mb-4 border border-rose-200';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            } else if (type === 'success') {
+                iconEl.className = 'w-14 h-14 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl mx-auto mb-4 border border-emerald-200';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            } else {
+                iconEl.className = 'w-14 h-14 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mx-auto mb-4 border border-amber-200';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+            }
+
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        window.onload = function() {
+            getQuizzes();
+            switchAdminTab('overview');
+        };
+    </script>
+</body>
+</html>
